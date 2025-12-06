@@ -133,7 +133,7 @@ dmypy.json
 .pyre/
 
 # IDE
-#.idea/
+.idea/
 *.swp
 *.swo
 *~
