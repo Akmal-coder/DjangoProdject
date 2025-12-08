@@ -1,0 +1,9 @@
+body {
+    background-color: #e8f4f8 !important; /* Светло-голубой фон */
+    border: 5px solid red !important;     /* Красная рамка вокруг всей страницы */
+}
+
+h1 {
+    color: darkblue !important;
+    text-decoration: underline !important;
+}
