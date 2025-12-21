@@ -1,69 +1,66 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Главная - Интернет-магазин</title>
-    <!-- Bootstrap CSS -->
-    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <div class="container">
-            <a class="navbar-brand" href="{% url 'catalog:home' %}">Мой Магазин</a>
-            <div class="collapse navbar-collapse">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'catalog:home' %}">Главная</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'catalog:contacts' %}">Контакты</a>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
+{% extends 'catalog/base.html' %}
 
-    <div class="container mt-4">
-        <h1 class="mb-4">Добро пожаловать в наш интернет-магазин!</h1>
-        <p class="lead">Здесь вы найдёте лучшие товары по выгодным ценам. Каталог обновляется ежедневно.</p>
+{% block title %}Главная - IQ-Tech{% endblock %}
 
-        <div class="row">
-            <!-- Пример карточек товаров (пока статичные; позже из моделей) -->
-            <div class="col-md-4 mb-3">
-                <div class="card">
-                    <img src="https://via.placeholder.com/300x200?text=Товар+1" class="card-img-top" alt="Товар 1">
-                    <div class="card-body">
-                        <h5 class="card-title">Книга: Python для начинающих</h5>
-                        <p class="card-text">Отличное введение в Python. Цена: 500 руб.</p>
-                        <a href="#" class="btn btn-primary">Купить</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4 mb-3">
-                <div class="card">
-                    <img src="https://via.placeholder.com/300x200?text=Товар+2" class="card-img-top" alt="Товар 2">
-                    <div class="card-body">
-                        <h5 class="card-title">Ноутбук Dell</h5>
-                        <p class="card-text">Мощный ноутбук для работы. Цена: 50000 руб.</p>
-                        <a href="#" class="btn btn-primary">Купить</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4 mb-3">
-                <div class="card">
-                    <img src="https://via.placeholder.com/300x200?text=Товар+3" class="card-img-top" alt="Товар 3">
-                    <div class="card-body">
-                        <h5 class="card-title">Смартфон iPhone</h5>
-                        <p class="card-text">Последняя модель. Цена: 80000 руб.</p>
-                        <a href="#" class="btn btn-primary">Купить</a>
-                    </div>
-                </div>
-            </div>
-        </div>
+{% block page_header %}
+    {% include 'catalog/header.html' %}
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Кнопка добавления товара -->
+    <div class="mb-4">
+        <a href="{% url 'catalog:product_create' %}" class="btn btn-success">➕ Добавить товар</a>
     </div>
 
-    <!-- Bootstrap JS -->
-    <script src="/static/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+    <!-- Товары -->
+    <div class="row">
+        {% for product in products %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                {% if product.image %}
+                <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}" style="height: 200px; object-fit: contain;">
+                {% endif %}
+
+                <div class="card-body">
+                    <h5 class="card-title">{{ product.name }}</h5>
+                    <span class="badge bg-secondary">{{ product.category.name }}</span>
+
+                    <!-- ОПИСАНИЕ ОБРЕЗАЕМ ДО 100 СИМВОЛОВ -->
+                    <p class="card-text mt-2">
+                        {% if product.description|length > 100 %}
+                            {{ product.description|slice:":100" }}...
+                        {% else %}
+                            {{ product.description }}
+                        {% endif %}
+                    </p>
+
+                    <h5 class="text-success">{{ product.purchase_price }} ₽</h5>
+                    <a href="{% url 'catalog:product_detail' product.id %}" class="btn btn-primary">Подробнее</a>
+                    <a href="#" class="btn btn-success">Купить</a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-warning">Товаров пока нет.</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Пагинация -->
+    {% if total_pages > 1 %}
+    <div class="mt-4 text-center">
+        {% if has_prev %}
+        <a href="?page={{ page|add:'-1' }}" class="btn btn-sm btn-outline-primary">← Назад</a>
+        {% endif %}
+
+        <span class="mx-3">Страница {{ page }} из {{ total_pages }}</span>
+
+        {% if has_next %}
+        <a href="?page={{ page|add:'1' }}" class="btn btn-sm btn-outline-primary">Вперед →</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

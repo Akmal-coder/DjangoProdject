@@ -1,0 +1,23 @@
+{% extends 'catalog/base.html' %}
+{% block title %} Каталог продуктов {% endblock %}
+{% block content%}
+{% include 'catalog/header.html' %}
+<div class="row text-center">
+        {% for product in products %}
+            <div class="col-3">
+                <div class="card mb-4 box-shadow">
+                    <div class="card-header">
+                        <h6 class="my-0 font-weight-normal">{{ product.name }}</h6>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title pricing-card-title">{{ product.purchase_price }} ₽</h5>
+                        <ul class="list-unstyled mt-3 mb-4 text-start m-3">
+                            <li>{{ product.description|truncatechars:100 }}</li>
+                        </ul>
+                        <a class="btn btn-lg btn-block btn-outline-primary" href="{% url 'catalog:product_detail' product.id %}">Купить</a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+</div>
+{% endblock %}
