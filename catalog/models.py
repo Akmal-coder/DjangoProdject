@@ -44,3 +44,17 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+
+class Contact(models.Model):
+    email = models.EmailField(verbose_name="Email")
+    phone = models.CharField(max_length=50, verbose_name="Номер телефона", blank=True)
+    country = models.CharField(max_length=100, verbose_name="Страна")
+    inn = models.CharField(max_length=30, verbose_name="ИНН")
+    address = models.TextField(max_length=255, verbose_name="Адрес")
+
+    class Meta:
+        verbose_name = "Контакт"
+        verbose_name_plural = "Контакты"
+
+        def __str__(self):
+            return self.email
