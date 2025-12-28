@@ -1,0 +1,55 @@
+{% extends 'blog/base.html' %}
+
+{% block title %}Удаление записи "{{ object.title }}"{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h3 class="mb-0"> Подтверждение удаления</h3>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <h5 class="alert-heading">Внимание!</h5>
+                    <p class="mb-0">Вы собираетесь удалить запись. Это действие нельзя отменить.</p>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ object.title }}</h5>
+                        <p class="card-text">
+                            <small class="text-muted">
+                                Создано: {{ object.created_at|date:"d.m.Y H:i" }}<br>
+                                Просмотров: {{ object.views_count }}<br>
+                                Статус: {{ object.is_published|yesno:"Опубликована,Не опубликована" }}
+                            </small>
+                        </p>
+                        {% if object.preview %}
+                        <img src="{{ object.preview.url }}" class="img-fluid rounded" alt="{{ object.title }}" style="max-height: 150px;">
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between">
+                    <form method="post" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                             Да, удалить навсегда
+                        </button>
+                    </form>
+                    
+                    <div>
+                        <a href="{% url 'blog:post_detail' object.pk %}" class="btn btn-outline-secondary">
+                            ← Вернуться к записи
+                        </a>
+                        <a href="{% url 'blog:post_list' %}" class="btn btn-primary">
+                            К списку записей
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
