@@ -1,0 +1,61 @@
+{% extends 'blog/base.html' %}
+
+{% block title %}{{ post.title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <h1 class="mb-3">{{ post.title }}</h1>
+        
+        <div class="mb-4">
+            <span class="badge bg-secondary">{{ post.created_at|date:"d.m.Y H:i" }}</span>
+            <span class="badge bg-primary ms-2">{{ post.views_count }} просмотров</span>
+            <span class="badge bg-{{ post.is_published|yesno:'success,danger' }} ms-2">
+                {{ post.is_published|yesno:"Опубликовано,Не опубликовано" }}
+            </span>
+        </div>
+        
+        {% if post.preview %}
+        <div class="mb-4">
+            <img src="{{ post.preview.url }}" class="img-fluid rounded" alt="{{ post.title }}">
+        </div>
+        {% endif %}
+        
+        <div class="content mb-5">
+            {{ post.content|linebreaks }}
+        </div>
+        
+        <div class="btn-group">
+            <a href="{% url 'blog:post_update' post.pk %}" class="btn btn-warning">
+                 Редактировать
+            </a>
+            <a href="{% url 'blog:post_delete' post.pk %}" class="btn btn-danger">
+                 Удалить
+            </a>
+            <a href="{% url 'blog:post_list' %}" class="btn btn-secondary">
+                ← Назад к списку
+            </a>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Информация</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Дата создания:</strong><br>
+                {{ post.created_at|date:"d.m.Y H:i" }}</p>
+                
+                <p><strong>Последнее изменение:</strong><br>
+                {{ post.updated_at|date:"d.m.Y H:i"|default:"Не изменялась" }}</p>
+                
+                <p><strong>Статус:</strong><br>
+                <span class="badge bg-{{ post.is_published|yesno:'success,danger' }}">
+                    {{ post.is_published|yesno:"Опубликована,Не опубликована" }}
+                </span></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
