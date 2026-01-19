@@ -1,0 +1,9 @@
+<nav class="navbar">
+    <div class="container">
+        <a href="{% url 'blog:post_list' %}" class="navbar-brand">Блог</a>
+        <ul class="navbar-nav">
+            <li><a href="{% url 'blog:post_create' %}">Новая запись</a></li>
+            <li><a href="{% url 'catalog:home' %}">В магазин</a></li>
+        </ul>
+    </div>
+</nav>

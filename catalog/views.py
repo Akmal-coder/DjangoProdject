@@ -1,112 +1,76 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse, Http404
-from catalog.models import Product, Category  # ← ОБА МОДЕЛИ
+from django.shortcuts import render
+from django.views.generic import View, ListView, DetailView, CreateView
+from django.http import HttpResponse
+from django.urls import reverse_lazy
+from catalog.models import Product, Category
 
 
-# Контроллер главной страницы
-def home(request):
-    # Все товары
-    all_products = Product.objects.all()
+# 1. Главная страница с пагинацией
+class HomeView(ListView):
+    model = Product
+    template_name = 'catalog/home.html'
+    context_object_name = 'products'
+    paginate_by = 3
 
-    # Простая пагинация: по 3 товара
-    products_per_page = 3
-    page = request.GET.get('page', 1)
-
-    # Преобразуем страницу в число
-    try:
-        page = int(page)
-        if page < 1:
-            page = 1
-    except:
-        page = 1
-
-    # Вычисляем индексы
-    start = (page - 1) * products_per_page
-    end = start + products_per_page
-    products = all_products[start:end]
-
-    # Общее количество страниц
-    total_pages = (all_products.count() + products_per_page - 1) // products_per_page
-
-    context = {
-        'products': products,
-        'page': page,
-        'total_pages': total_pages,
-        'has_prev': page > 1,
-        'has_next': page < total_pages,
-    }
-    return render(request, 'catalog/home.html', context)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        page = context['page_obj']
+        context.update({
+            'page': page.number,
+            'total_pages': context['paginator'].num_pages,
+            'has_prev': page.has_previous(),
+            'has_next': page.has_next(),
+        })
+        return context
 
 
-# Контроллер страницы контактов (с обработкой POST)
-def contacts(request):
-    if request.method == 'POST':
+# 2. Контакты с обработкой POST
+class ContactsView(View):
+    template_name = 'catalog/contacts.html'
+
+    def get(self, request, *args, **kwargs):
+        """Обработка GET запроса - показ формы"""
+        return render(request, self.template_name)
+
+    def post(self, request, *args, **kwargs):
+        """Обработка POST запроса - получение данных формы"""
         name = request.POST.get('name')
         email = request.POST.get('email')
         message = request.POST.get('message')
+
         print(f"Новое сообщение от {name} ({email}): {message}")
         return HttpResponse(f"Спасибо, {name}! Ваше сообщение получено. Мы свяжемся с вами по {email}.")
-    elif request.method == 'GET':
-        return render(request, 'catalog/contacts.html')
-    else:
-        return HttpResponse("Метод не поддерживается", status=405)
 
 
-def product_detail(request, product_id):
-    """
-    Отображает подробную информацию о конкретном товаре.
-    """
-    # Получаем товар по ID или показываем 404 ошибку
-    product = get_object_or_404(Product, id=product_id)
+# 3. Детальная страница товара
+class ProductDetailView(DetailView):
+    model = Product
+    template_name = 'catalog/product_detail.html'
+    context_object_name = 'product'
+    pk_url_kwarg = 'product_id'
 
-    # Подготавливаем контекст для шаблона
-    context = {
-        'product': product,
-        'title': f'{product.name} - Детальная информация'
-    }
-
-    # Отображаем шаблон с информацией о товаре
-    return render(request, 'catalog/product_detail.html', context)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = f'{self.object.name} - Детальная информация'
+        return context
 
 
-def product_create(request):
-    """Добавление нового товара"""
-    categories = Category.objects.all()
+# 4. Создание товара
+class ProductCreateView(CreateView):
+    model = Product
+    template_name = 'catalog/product_create.html'
+    fields = ['name', 'description', 'category', 'purchase_price', 'image']
 
-    if request.method == "POST":
-        # Получаем данные из формы
-        name = request.POST.get("name")
-        description = request.POST.get("description")
-        category_id = request.POST.get("category")
-        purchase_price = request.POST.get("purchase_price")
-        image = request.FILES.get("image")
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['categories'] = Category.objects.all()
+        return context
 
-        # Проверяем обязательные поля
-        if name and category_id and purchase_price:
-            try:
-                category = Category.objects.get(id=category_id)
-
-                # Создаем товар
-                product = Product.objects.create(
-                    name=name,
-                    description=description,
-                    category=category,
-                    purchase_price=purchase_price,
-                    image=image
-                )
-
-                # Перенаправляем на страницу товара
-                return redirect('catalog:product_detail', product_id=product.id)
-            except Category.DoesNotExist:
-                # Обработка ошибки, если категория не найдена
-                return HttpResponse("Категория не найдена", status=400)
-            except ValueError:
-                # Ошибка преобразования цены
-                return HttpResponse("Некорректная цена", status=400)
-
-    # Для GET запроса показываем форму
-    return render(request, "catalog/product_create.html", {"categories": categories})
+    def get_success_url(self):
+        return reverse_lazy('catalog:product_detail', kwargs={'product_id': self.object.id})
 
 
-def test(request):
-    return HttpResponse("TEST OK - URL работает!")
+# 5. Тестовый контроллер
+class TestView(View):
+    def get(self, request, *args, **kwargs):
+        return HttpResponse("TEST OK - URL работает!")
