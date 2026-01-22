@@ -34,6 +34,13 @@ class Product(models.Model):
     purchase_price = models.DecimalField(
         max_digits=10, decimal_places=2, verbose_name="Цена за покупку", help_text="Введите стоимость продукта"
     )
+    is_published = models.BooleanField(
+        default=True,
+        verbose_name="Опубликовано",
+        help_text="Отметьте, чтобы продукт был виден в каталоге"
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата последнего изменения")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата последнего изменения")
 
@@ -58,3 +65,4 @@ class Contact(models.Model):
 
         def __str__(self):
             return self.email
+

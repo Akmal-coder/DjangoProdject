@@ -4,7 +4,11 @@
 <div class="container mt-5">
     <div class="row">
         <div class="col-md-4">
-            <img src="{{ product.image.url }}" class="img-fluid img-thumbnail" alt="{{ product.name }}">
+            {% if product.image %}
+    <img src="{{ product.image.url }}" class="img-fluid img-thumbnail" alt="{{ product.name }}">
+{% else %}
+    <img src="/static/images/no_image.jpg" class="img-fluid img-thumbnail" alt="Нет изображения">
+{% endif %}
         </div>
 
         <div class="col-md-8">

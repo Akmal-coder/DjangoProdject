@@ -1,11 +1,11 @@
 from django.shortcuts import render
-from django.views.generic import View, ListView, DetailView, CreateView
+from django.views.generic import View, ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.http import HttpResponse
 from django.urls import reverse_lazy
 from catalog.models import Product, Category
+from catalog.forms import ProductForm
 
-
-# 1. Главная страница с пагинацией
+# Главная страница с пагинацией
 class HomeView(ListView):
     model = Product
     template_name = 'catalog/home.html'
@@ -24,7 +24,7 @@ class HomeView(ListView):
         return context
 
 
-# 2. Контакты с обработкой POST
+# Контакты с обработкой POST
 class ContactsView(View):
     template_name = 'catalog/contacts.html'
 
@@ -42,7 +42,14 @@ class ContactsView(View):
         return HttpResponse(f"Спасибо, {name}! Ваше сообщение получено. Мы свяжемся с вами по {email}.")
 
 
-# 3. Детальная страница товара
+# СПИСОК всех товаров
+class ProductListView(ListView):
+    model = Product
+    template_name = 'catalog/product_list.html'
+    context_object_name = 'products'
+
+
+# Детальная страница товара
 class ProductDetailView(DetailView):
     model = Product
     template_name = 'catalog/product_detail.html'
@@ -55,22 +62,36 @@ class ProductDetailView(DetailView):
         return context
 
 
-# 4. Создание товара
+# СОЗДАНИЕ товара
 class ProductCreateView(CreateView):
     model = Product
+    form_class = ProductForm  # <-- ВАЖНО! Используем нашу форму с валидацией!
     template_name = 'catalog/product_create.html'
-    fields = ['name', 'description', 'category', 'purchase_price', 'image']
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['categories'] = Category.objects.all()
-        return context
 
     def get_success_url(self):
         return reverse_lazy('catalog:product_detail', kwargs={'product_id': self.object.id})
 
 
-# 5. Тестовый контроллер
+# РЕДАКТИРОВАНИЕ товара
+class ProductUpdateView(UpdateView):
+    model = Product
+    form_class = ProductForm  # <-- Используем ту же форму с валидацией!
+    template_name = 'catalog/product_form.html'  # Можно использовать общий шаблон
+    pk_url_kwarg = 'product_id'
+
+    def get_success_url(self):
+        return reverse_lazy('catalog:product_detail', kwargs={'product_id': self.object.id})
+
+
+# УДАЛЕНИЕ товара
+class ProductDeleteView(DeleteView):
+    model = Product
+    template_name = 'catalog/product_confirm_delete.html'  # <-- Обязательный шаблон по критериям!
+    pk_url_kwarg = 'product_id'
+    success_url = reverse_lazy('catalog:product_list')  # После удаления - на список товаров
+
+
+# 8. Тестовый контроллер
 class TestView(View):
     def get(self, request, *args, **kwargs):
         return HttpResponse("TEST OK - URL работает!")
