@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+{% extends 'catalog/base.html' %}  <!-- или ваш базовый шаблон -->
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Регистрация</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        {% if form.errors %}
+                            <div class="alert alert-danger">
+                                Исправьте ошибки ниже.
+                            </div>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <label for="id_email" class="form-label">Электронная почта</label>
+                            <input type="email"
+                                   name="email"
+                                   id="id_email"
+                                   class="form-control {% if form.email.errors %}is-invalid{% endif %}"
+                                   value="{{ form.email.value|default:'' }}"
+                                   required>
+                            {% if form.email.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.email.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_password1" class="form-label">Пароль</label>
+                            <input type="password"
+                                   name="password1"
+                                   id="id_password1"
+                                   class="form-control {% if form.password1.errors %}is-invalid{% endif %}"
+                                   required>
+                            {% if form.password1.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.password1.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                Минимум 8 символов. Не только цифры.
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_password2" class="form-label">Подтверждение пароля</label>
+                            <input type="password"
+                                   name="password2"
+                                   id="id_password2"
+                                   class="form-control {% if form.password2.errors %}is-invalid{% endif %}"
+                                   required>
+                            {% if form.password2.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.password2.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">Зарегистрироваться</button>
+                    </form>
+
+                    <hr class="my-4">
+
+                    <div class="text-center">
+                        <p>Уже есть аккаунт? <a href="{% url 'users:login' %}">Войти</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
