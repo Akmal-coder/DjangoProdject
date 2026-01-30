@@ -1,4 +1,3 @@
-html
 {% extends "catalog/base.html" %}
 
 {% block title %}Список товаров{% endblock %}
@@ -6,14 +5,14 @@ html
 {% block content %}
 <div class="container mt-5">
     <h1 class="mb-4">Список товаров</h1>
-    
+
     <div class="d-flex justify-content-between mb-4">
         <a href="{% url 'catalog:product_create' %}" class="btn btn-primary">
             <i class="bi bi-plus-circle"></i> Добавить товар
         </a>
         <span class="badge bg-info p-2">Всего товаров: {{ products|length }}</span>
     </div>
-    
+
     {% if products %}
     <div class="table-responsive">
         <table class="table table-hover">
@@ -22,7 +21,8 @@ html
                     <th>Название</th>
                     <th>Категория</th>
                     <th>Цена</th>
-                    <th>Статус</th>
+                    <th>Статус публикации</th>
+                    <th>Владелец</th>
                     <th>Действия</th>
                 </tr>
             </thead>
@@ -33,26 +33,67 @@ html
                     <td>{{ product.category.name }}</td>
                     <td>{{ product.purchase_price }} руб.</td>
                     <td>
+                        <!-- МЕНЯЕМ: вместо is_published показываем publication_status -->
+                        <span class="badge
+                            {% if product.publication_status == 'PUB' %}bg-success
+                            {% elif product.publication_status == 'MOD' %}bg-warning text-dark
+                            {% elif product.publication_status == 'REJ' %}bg-danger
+                            {% else %}bg-secondary{% endif %}">
+                            {{ product.get_publication_status_display }}
+                        </span>
+                        <!-- Старый статус можно оставить или удалить -->
                         {% if product.is_published %}
-                            <span class="badge bg-success">Опубликован</span>
+                            <small class="text-muted d-block">Виден в каталоге</small>
                         {% else %}
-                            <span class="badge bg-secondary">Скрыт</span>
+                            <small class="text-muted d-block">Скрыт из каталога</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if product.owner %}
+                            {{ product.owner.username }}
+                        {% else %}
+                            <span class="text-muted">Не указан</span>
                         {% endif %}
                     </td>
                     <td>
                         <div class="btn-group" role="group">
-                            <a href="{% url 'catalog:product_detail' product.pk %}" 
+                            <!-- Кнопка просмотра для всех -->
+                            <a href="{% url 'catalog:product_detail' product.pk %}"
                                class="btn btn-sm btn-info" title="Просмотр">
                                 <i class="bi bi-eye"></i>
                             </a>
-                            <a href="{% url 'catalog:product_update' product.pk %}" 
+
+                            <!-- Кнопка редактирования только для владельца -->
+                            {% if user == product.owner %}
+                            <a href="{% url 'catalog:product_update' product.pk %}"
                                class="btn btn-sm btn-warning" title="Изменить">
                                 <i class="bi bi-pencil"></i>
                             </a>
-                            <a href="{% url 'catalog:product_delete' product.pk %}" 
+                            {% endif %}
+
+                            <!-- Кнопка удаления для владельца -->
+                            {% if user == product.owner %}
+                            <a href="{% url 'catalog:product_delete' product.pk %}"
                                class="btn btn-sm btn-danger" title="Удалить">
                                 <i class="bi bi-trash"></i>
                             </a>
+                            {% endif %}
+
+                            <!-- Кнопка снятия с публикации для модераторов -->
+                            {% if perms.catalog.can_unpublish_product %}
+                            <a href="{% url 'catalog:product_unpublish' product.pk %}"
+                               class="btn btn-sm btn-warning" title="Снять с публикации" style="background-color: #ffc107; border-color: #ffc107;">
+                                <i class="bi bi-megaphone"></i>
+                            </a>
+                            {% endif %}
+
+                            <!-- Кнопка удаления для модератора (даже не свои продукты) -->
+                            {% if perms.catalog.delete_product and user != product.owner %}
+                            <a href="{% url 'catalog:product_delete' product.pk %}"
+                               class="btn btn-sm btn-outline-danger" title="Удалить (модератор)">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                            {% endif %}
                         </div>
                     </td>
                 </tr>

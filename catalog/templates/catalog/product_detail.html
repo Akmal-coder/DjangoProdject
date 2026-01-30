@@ -5,19 +5,52 @@
     <div class="row">
         <div class="col-md-4">
             {% if product.image %}
-    <img src="{{ product.image.url }}" class="img-fluid img-thumbnail" alt="{{ product.name }}">
-{% else %}
-    <img src="/static/images/no_image.jpg" class="img-fluid img-thumbnail" alt="Нет изображения">
-{% endif %}
+                <img src="{{ product.image.url }}" class="img-fluid img-thumbnail" alt="{{ product.name }}">
+            {% else %}
+                <img src="/static/images/no_image.jpg" class="img-fluid img-thumbnail" alt="Нет изображения">
+            {% endif %}
         </div>
 
         <div class="col-md-8">
             <h1 class="mb-4">{{ product.name }}</h1>
             <h4>Категория: {{ product.category.name }}</h4>
             <p>Цена: {{ product.purchase_price }} руб.</p>
+            <p><strong>Владелец:</strong> {{ product.owner.username|default:"Не указан" }}</p>
+            <p><strong>Статус публикации:</strong> {{ product.get_publication_status_display }}</p>
             <p>Дата добавления: {{ product.created_at|date:"d M Y" }}</p>
             <p>Дата последнего обновления: {{ product.updated_at|date:"d M Y" }}</p>
+
+            <!-- БЛОК С КНОПКАМИ ДЛЯ ВЛАДЕЛЬЦА И МОДЕРАТОРА -->
+            <div class="mt-4">
+                <a href="{% url 'catalog:product_list' %}" class="btn btn-secondary">Назад к списку</a>
+
+                <!-- Кнопки редактирования и удаления показываем только владельцу -->
+                {% if user == product.owner %}
+                    <a href="{% url 'catalog:product_update' product.id %}" class="btn btn-primary">Редактировать</a>
+                    <a href="{% url 'catalog:product_delete' product.id %}" class="btn btn-danger">Удалить</a>
+                {% endif %}
+
+                <!-- Кнопку "Снять с публикации" показываем модераторам -->
+                {% if perms.catalog.can_unpublish_product %}
+                    <a href="{% url 'catalog:product_unpublish' product.id %}" class="btn btn-warning">Снять с публикации</a>
+                {% endif %}
+
+                <!-- Модератор может удалять любые продукты (даже не свои) -->
+                {% if perms.catalog.delete_product and user != product.owner %}
+                    <a href="{% url 'catalog:product_delete' product.id %}" class="btn btn-outline-danger">Удалить (как модератор)</a>
+                {% endif %}
+            </div>
         </div>
     </div>
+
+    <!-- Блок с описанием (если его нет в оригинале, можно удалить) -->
+    {% if product.description %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <h3>Описание</h3>
+            <p>{{ product.description|linebreaks }}</p>
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
