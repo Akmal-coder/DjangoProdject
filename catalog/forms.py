@@ -11,13 +11,15 @@ FORBIDDEN_WORDS = [
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ['name', 'description', 'image', 'category', 'purchase_price', 'is_published']
+        # УБИРАЕМ is_published, ДОБАВЛЯЕМ publication_status
+        fields = ['name', 'description', 'image', 'category', 'purchase_price', 'publication_status']
         widgets = {
             'description': forms.Textarea(attrs={'rows': 4}),
             'category': forms.Select(),
+            'publication_status': forms.Select(attrs={'class': 'form-control'}),  # Добавляем
         }
 
-    #Валидация на запрещенные слова
+    # Валидация на запрещенные слова
     def clean_name(self):
         """Проверяем название на отсутствие запрещенных слов."""
         name = self.cleaned_data['name'].lower()
@@ -34,7 +36,7 @@ class ProductForm(forms.ModelForm):
                 raise ValidationError(f'Описание содержит запрещенное слово: "{word}".')
         return description
 
-    #Валидация цены
+    # Валидация цены
     def clean_purchase_price(self):
         """Проверяем, что цена не отрицательная."""
         price = self.cleaned_data['purchase_price']
@@ -42,14 +44,9 @@ class ProductForm(forms.ModelForm):
             raise ValidationError('Цена не может быть отрицательной.')
         return price
 
-    #Стилизация форм
+    # Стилизация форм
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Добавляем Bootstrap классы ко всем полям
         for field_name, field in self.fields.items():
-            if field_name != 'is_published':
-                # Для чекбокса будет отдельный класс
-                field.widget.attrs['class'] = 'form-control'
-            else:
-                # Для булевого поля (чекбокса) - отдельная стилизация
-                field.widget.attrs['class'] = 'form-check-input'
+            field.widget.attrs['class'] = 'form-control'
