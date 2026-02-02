@@ -1,3 +1,4 @@
+html
 {% extends "catalog/base.html" %}
 
 {% block title %}
@@ -12,7 +13,7 @@
 
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        
+
         {% if form.non_field_errors %}
         <div class="alert alert-danger">
             {% for error in form.non_field_errors %}
@@ -26,14 +27,17 @@
             <label for="{{ field.id_for_label }}" class="form-label">
                 {{ field.label }}
             </label>
-            
-            {% if field.name == 'is_published' %}
-            <div class="form-check">
-                {{ field }}
-                <label class="form-check-label" for="{{ field.id_for_label }}">
-                    Опубликовать товар
-                </label>
-            </div>
+
+            <!-- МЕНЯЕМ: вместо is_published делаем для publication_status -->
+            {% if field.name == 'publication_status' %}
+                <!-- Для поля статуса публикации (select) -->
+                <select name="{{ field.name }}" id="{{ field.id_for_label }}" class="form-select">
+                    {% for value, label in field.field.choices %}
+                        <option value="{{ value }}" {% if field.value == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                    {% endfor %}
+                </select>
             {% else %}
                 {{ field }}
             {% endif %}

@@ -9,14 +9,14 @@ from .views import (
     ProductCreateView,
     ProductUpdateView,
     ProductDeleteView,
+    ProductUnpublishView,
     TestView
 )
 
 app_name = 'catalog'
 
 urlpatterns = [
-    # Главная страница
-    path('', HomeView.as_view(), name='home'),
+    path('', ProductListView.as_view(), name='home'),
 
     # Контакты
     path('contacts/', ContactsView.as_view(), name='contacts'),
@@ -27,6 +27,9 @@ urlpatterns = [
     path('product/<int:product_id>/', ProductDetailView.as_view(), name='product_detail'),  # ПРОСМОТР
     path('product/<int:product_id>/update/', ProductUpdateView.as_view(), name='product_update'),  # РЕДАКТИРОВАНИЕ
     path('product/<int:product_id>/delete/', ProductDeleteView.as_view(), name='product_delete'),  # УДАЛЕНИЕ
+
+    # НОВЫЙ МАРШРУТ для отмены публикации (для модераторов)
+    path('product/<int:product_id>/unpublish/', ProductUnpublishView.as_view(), name='product_unpublish'),
 
     # Тестовый URL
     path('test/', TestView.as_view(), name='test'),

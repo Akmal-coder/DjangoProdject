@@ -1,12 +1,15 @@
 from django.shortcuts import render
 from django.views.generic import View, ListView, DetailView, CreateView, UpdateView, DeleteView
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseForbidden
 from django.urls import reverse_lazy
-from django.contrib.auth.mixins import LoginRequiredMixin  # <-- ИМПОРТИРУЕМ МИКСИН
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from catalog.models import Product, Category
 from catalog.forms import ProductForm
 
-# Главная страница с пагинацией - ОБЩЕДОСТУПНАЯ
+
+# ========== ОБЩЕДОСТУПНЫЕ ПРЕДСТАВЛЕНИЯ ==========
+
+# Главная страница
 class HomeView(ListView):
     model = Product
     template_name = 'catalog/home.html'
@@ -25,7 +28,7 @@ class HomeView(ListView):
         return context
 
 
-# Контакты с обработкой POST - ОБЩЕДОСТУПНАЯ
+# Контакты
 class ContactsView(View):
     template_name = 'catalog/contacts.html'
 
@@ -40,20 +43,28 @@ class ContactsView(View):
         return HttpResponse(f"Спасибо, {name}! Ваше сообщение получено. Мы свяжемся с вами по {email}.")
 
 
-# СПИСОК всех товаров - ОБЩЕДОСТУПНЫЙ (по условию задания)
+# Список всех товаров
 class ProductListView(ListView):
     model = Product
     template_name = 'catalog/product_list.html'
     context_object_name = 'products'
 
 
-# Детальная страница товара - ТОЛЬКО ДЛЯ АВТОРИЗОВАННЫХ
+# Тестовый контроллер
+class TestView(View):
+    def get(self, request, *args, **kwargs):
+        return HttpResponse("TEST OK - URL работает!")
+
+
+# ========== ТОЛЬКО ДЛЯ АВТОРИЗОВАННЫХ ==========
+
+# Детальная страница товара
 class ProductDetailView(LoginRequiredMixin, DetailView):
     model = Product
     template_name = 'catalog/product_detail.html'
     context_object_name = 'product'
     pk_url_kwarg = 'product_id'
-    login_url = '/users/login/'  # Куда перенаправлять неавторизованных
+    login_url = '/users/login/'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -61,7 +72,7 @@ class ProductDetailView(LoginRequiredMixin, DetailView):
         return context
 
 
-# СОЗДАНИЕ товара - ТОЛЬКО ДЛЯ АВТОРИЗОВАННЫХ
+# СОЗДАНИЕ товара
 class ProductCreateView(LoginRequiredMixin, CreateView):
     model = Product
     form_class = ProductForm
@@ -71,9 +82,14 @@ class ProductCreateView(LoginRequiredMixin, CreateView):
     def get_success_url(self):
         return reverse_lazy('catalog:product_detail', kwargs={'product_id': self.object.id})
 
+    # Автоматическое назначение владельца
+    def form_valid(self, form):
+        form.instance.owner = self.request.user
+        return super().form_valid(form)
 
-# РЕДАКТИРОВАНИЕ товара - ТОЛЬКО ДЛЯ АВТОРИЗОВАННЫХ
-class ProductUpdateView(LoginRequiredMixin, UpdateView):
+
+# РЕДАКТИРОВАНИЕ товара - ТОЛЬКО ДЛЯ ВЛАДЕЛЬЦА
+class ProductUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Product
     form_class = ProductForm
     template_name = 'catalog/product_form.html'
@@ -83,17 +99,40 @@ class ProductUpdateView(LoginRequiredMixin, UpdateView):
     def get_success_url(self):
         return reverse_lazy('catalog:product_detail', kwargs={'product_id': self.object.id})
 
+    # Проверка что пользователь - владелец продукта
+    def test_func(self):
+        product = self.get_object()
+        return product.owner == self.request.user
 
-# УДАЛЕНИЕ товара - ТОЛЬКО ДЛЯ АВТОРИЗОВАННЫХ
-class ProductDeleteView(LoginRequiredMixin, DeleteView):
+
+# УДАЛЕНИЕ товара - ДЛЯ ВЛАДЕЛЬЦА ИЛИ МОДЕРАТОРА
+class ProductDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     model = Product
     template_name = 'catalog/product_confirm_delete.html'
     pk_url_kwarg = 'product_id'
     success_url = reverse_lazy('catalog:product_list')
     login_url = '/users/login/'
 
+    # Проверка что пользователь - владелец ИЛИ имеет право удалять (модератор)
+    def test_func(self):
+        product = self.get_object()
+        user = self.request.user
+        return product.owner == user or user.has_perm('catalog.delete_product')
 
-# Тестовый контроллер - ОБЩЕДОСТУПНЫЙ
-class TestView(View):
-    def get(self, request, *args, **kwargs):
-        return HttpResponse("TEST OK - URL работает!")
+
+# ОТМЕНА ПУБЛИКАЦИИ - ТОЛЬКО ДЛЯ МОДЕРАТОРОВ
+class ProductUnpublishView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = Product
+    template_name = 'catalog/product_unpublish_confirm.html'
+    fields = []
+    pk_url_kwarg = 'product_id'
+    success_url = reverse_lazy('catalog:product_list')
+    login_url = '/users/login/'
+
+    # Проверка что пользователь имеет право can_unpublish_product
+    def test_func(self):
+        return self.request.user.has_perm('catalog.can_unpublish_product')
+
+    def form_valid(self, form):
+        form.instance.publication_status = Product.Status.UNPUBLISHED
+        return super().form_valid(form)

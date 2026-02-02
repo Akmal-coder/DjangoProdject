@@ -1,6 +1,5 @@
-from tkinter.constants import CASCADE
-
 from django.db import models
+from django.conf import settings  # Добавляем для кастомного пользователя
 
 
 class Category(models.Model):
@@ -41,16 +40,46 @@ class Product(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата последнего изменения")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата последнего изменения")
+
+    # === ДОБАВЛЯЕМ ПОЛЯ ДЛЯ ДЗ ===
+    # 1. Поле для статуса публикации (по условию)
+    # Можно оставить BooleanField или сделать CharField с choices
+    # Сделаем CharField как в условии
+    class Status(models.TextChoices):
+        MODERATION = 'MOD', 'На модерации'
+        PUBLISHED = 'PUB', 'Опубликован'
+        REJECTED = 'REJ', 'Отклонен'
+        UNPUBLISHED = 'UNP', 'Снят с публикации'
+
+    publication_status = models.CharField(
+        max_length=3,
+        choices=Status.choices,
+        default=Status.MODERATION,  # По умолчанию не опубликован
+        verbose_name="Статус публикации"
+    )
+
+    # 2. Поле владельца (по условию)
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # Используем кастомного пользователя
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='products',
+        verbose_name="Владелец"
+    )
 
     class Meta:
         verbose_name = "Продукт"
         verbose_name_plural = "Продукты"
         ordering = ["category", "name"]
+        # === ДОБАВЛЯЕМ КАСТОМНЫЕ ПРАВА для ДЗ ===
+        permissions = [
+            ("can_unpublish_product", "Может отменять публикацию продукта"),
+        ]
 
     def __str__(self):
         return self.name
+
 
 class Contact(models.Model):
     email = models.EmailField(verbose_name="Email")
@@ -63,6 +92,6 @@ class Contact(models.Model):
         verbose_name = "Контакт"
         verbose_name_plural = "Контакты"
 
-        def __str__(self):
-            return self.email
+    def __str__(self):
+        return self.email
 
