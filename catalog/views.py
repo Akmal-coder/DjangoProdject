@@ -5,7 +5,8 @@ from django.urls import reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from catalog.models import Product, Category
 from catalog.forms import ProductForm
-
+from django.views.decorators.cache import cache_page
+from django.utils.decorators import method_decorator
 
 # ========== ОБЩЕДОСТУПНЫЕ ПРЕДСТАВЛЕНИЯ ==========
 
@@ -65,6 +66,12 @@ class ProductDetailView(LoginRequiredMixin, DetailView):
     context_object_name = 'product'
     pk_url_kwarg = 'product_id'
     login_url = '/users/login/'
+
+
+    @method_decorator(cache_page(60))  # Кешируем страницу на 60 секунд
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -136,3 +143,29 @@ class ProductUnpublishView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     def form_valid(self, form):
         form.instance.publication_status = Product.Status.UNPUBLISHED
         return super().form_valid(form)
+
+
+# ПРЕДСТАВЛЕНИЕ ДЛЯ ПРОДУКТОВ В КАТЕГОРИИ
+
+class CategoryProductsView(ListView):
+    model = Product
+    template_name = 'catalog/category_products.html'
+    context_object_name = 'products'
+
+    def get_queryset(self):
+        category_id = self.kwargs.get('category_id')
+        # Используем сервисную функцию
+        from catalog.services import get_products_by_category
+        return get_products_by_category(category_id)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        category_id = self.kwargs.get('category_id')
+        try:
+            category = Category.objects.get(id=category_id)
+            context['category'] = category
+            context['title'] = f'Продукты в категории: {category.name}'
+        except Category.DoesNotExist:
+            context['category'] = None
+            context['title'] = 'Категория не найдена'
+        return context
