@@ -10,7 +10,8 @@ from .views import (
     ProductUpdateView,
     ProductDeleteView,
     ProductUnpublishView,
-    TestView
+    TestView,
+    CategoryProductsView,
 )
 
 app_name = 'catalog'
@@ -33,7 +34,9 @@ urlpatterns = [
 
     # Тестовый URL
     path('test/', TestView.as_view(), name='test'),
+    path('category/<int:category_id>/products/', CategoryProductsView.as_view(), name='category_products'),
 ]
+
 
 # Добавляем обслуживание медиафайлов в режиме DEBUG
 if settings.DEBUG:
